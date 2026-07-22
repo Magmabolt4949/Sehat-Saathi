@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f3faf9;
+  --foreground: #0f2a2b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@keyframes avatar-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes avatar-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.1); }
+}
+
+@keyframes avatar-talk {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes avatar-pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  70% { transform: scale(1.25); opacity: 0; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+@keyframes avatar-listen-bounce {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+.animate-avatar-float {
+  animation: avatar-float 3.2s ease-in-out infinite;
+}
+
+.animate-avatar-blink {
+  animation: avatar-blink 4.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-avatar-talk {
+  animation: avatar-talk 0.35s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-avatar-pulse-ring {
+  animation: avatar-pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-avatar-listen-bar {
+  animation: avatar-listen-bounce 0.6s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #e6f5f3 25%, #f0faf8 37%, #e6f5f3 63%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s linear infinite;
+}

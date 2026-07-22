@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__be18fafc-0689-4b62-831e-58c4c3d57db6__notion-search",
+      "mcp__be18fafc-0689-4b62-831e-58c4c3d57db6__notion-fetch",
+      "Bash(npm -v)",
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias \"@/*\" --use-npm --yes)",
+      "Bash(rm -rf sehat-saathi)",
+      "Bash(npx --yes create-next-app@latest sehat-saathi --typescript --tailwind --eslint --app --src-dir=false --import-alias \"@/*\" --use-npm --yes)",
+      "Bash(rsync -a --exclude=node_modules /private/tmp/claude-501/-Users-sumitmodi-Sehat-Saathi/5570e5e8-6770-465a-b476-016f8af56d70/scratchpad/sehat-saathi/ '/Users/sumitmodi/Sehat Saathi/')",
+      "Bash(rm -rf .next)",
+      "Bash(npm install *)",
+      "Bash(env)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/@mediapipe/tasks-vision/package.json'\\).version\\)\")",
+      "Bash(ps -p 13779 -o pid,etime,command)",
+      "Bash(curl -s -o /tmp/yoga_page.html -w \"HTTP %{http_code}\\\\n\" http://localhost:61576/yoga)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /tmp/home_page.html -w \"HTTP %{http_code}\\\\n\" http://localhost:61576/)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:61576/yoga -o /tmp/yoga_page2.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:50370/)",
+      "Bash(npx tsx -e ' *)"
+    ]
+  }
+}
