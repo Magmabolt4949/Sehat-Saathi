@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf9f5;
+  --foreground: #2b1912;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Claude-style warm palette — replaces Tailwind's default teal scale so every
+     existing teal-* utility across the app (bg/text/border/ring) picks this up. */
+  --color-teal-50: #faf9f5;
+  --color-teal-100: #f5f2ea;
+  --color-teal-200: #ebe6d8;
+  --color-teal-300: #ddd3bf;
+  --color-teal-400: #c9a891;
+  --color-teal-500: #e0785a;
+  --color-teal-600: #d97757;
+  --color-teal-700: #b85c3f;
+  --color-teal-800: #8a4530;
+  --color-teal-900: #4a2b1f;
+  --color-teal-950: #2b1912;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@keyframes avatar-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes avatar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes avatar-talk-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes avatar-pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  70% { transform: scale(1.25); opacity: 0; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+@keyframes avatar-listen-bounce {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+.animate-avatar-float {
+  animation: avatar-float 3.2s ease-in-out infinite;
+}
+
+.animate-avatar-spin {
+  animation: avatar-spin 6s linear infinite;
+}
+
+.animate-avatar-talk-bounce {
+  animation: avatar-talk-bounce 0.5s ease-in-out infinite;
+}
+
+.animate-avatar-pulse-ring {
+  animation: avatar-pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-avatar-listen-bar {
+  animation: avatar-listen-bounce 0.6s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #ebe6d8 25%, #f5f2ea 37%, #ebe6d8 63%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+.scroll-box {
+  scrollbar-width: thin;
+  scrollbar-color: #ddc3b3 transparent;
+}
+
+.scroll-box::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-box::-webkit-scrollbar-thumb {
+  background-color: #ddc3b3;
+  border-radius: 999px;
+}
+
+@keyframes shadow-float {
+  0%, 100% { transform: scale(1); opacity: 0.28; }
+  50% { transform: scale(0.82); opacity: 0.14; }
+}
+
+.animate-shadow-float {
+  animation: shadow-float 3.2s ease-in-out infinite;
+}
+
+@keyframes shine-sweep {
+  0% { transform: translateX(-160%) skewX(-20deg); }
+  60%, 100% { transform: translateX(260%) skewX(-20deg); }
+}
+
+.shine-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  animation: shine-sweep 3.5s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+  50% { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+}
+
+.animate-status-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+.card-tilt {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
