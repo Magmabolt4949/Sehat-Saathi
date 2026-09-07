@@ -169,3 +169,67 @@ body {
   transition: transform 0.15s ease-out;
   will-change: transform;
 }
+
+@keyframes slide-up-sheet {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up-sheet {
+  animation: slide-up-sheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 48;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-check-draw {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: check-draw 0.5s ease-out 0.15s both;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-12px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(160px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-confetti-fall {
+  animation: confetti-fall 1.7s ease-in forwards;
+}
+
+@keyframes confirm-pulse-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+.animate-confirm-pulse-ring {
+  animation: confirm-pulse-ring 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

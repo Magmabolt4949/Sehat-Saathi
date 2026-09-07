@@ -10,7 +10,7 @@ export const maxDuration = 60;
 
 const MAX_IMAGES = 6;
 const MAX_BASE64_LENGTH = 7_000_000; // roughly ~5MB image, base64-encoded
-const MAX_LOOP_ITERATIONS = 4;
+const MAX_LOOP_ITERATIONS = 5;
 
 const reportTool: Anthropic.Tool = {
   name: "provide_health_report",
@@ -82,6 +82,27 @@ const reportTool: Anthropic.Tool = {
         },
         description: "Real pharmacies found via web_search near the given locality. Empty if no locality or nothing found.",
       },
+      recommendedSpecialty: {
+        type: "string",
+        description: "Plain-language type of doctor best suited to the possible conditions (e.g. 'Dermatologist'). Empty string if no locality was given.",
+      },
+      nearbyDoctors: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            specialty: { type: "string" },
+            note: { type: "string" },
+            phone: {
+              type: "string",
+              description: "Real phone number ONLY if it appeared directly in a search result for this listing; empty string otherwise. Never invented or guessed.",
+            },
+          },
+          required: ["name", "specialty", "note", "phone"],
+        },
+        description: "Real doctors/clinics found via web_search near the given locality. Empty if no locality or nothing found.",
+      },
       nextSteps: {
         type: "array",
         items: { type: "string" },
@@ -100,6 +121,8 @@ const reportTool: Anthropic.Tool = {
       "suggestedRoutine",
       "homeRemedies",
       "nearbyPharmacies",
+      "recommendedSpecialty",
+      "nearbyDoctors",
       "nextSteps",
       "disclaimer",
     ],
@@ -109,7 +132,7 @@ const reportTool: Anthropic.Tool = {
 const webSearchTool: Anthropic.WebSearchTool20260209 = {
   type: "web_search_20260209",
   name: "web_search",
-  max_uses: 3,
+  max_uses: 5,
 };
 
 export async function POST(req: NextRequest) {

@@ -11,7 +11,7 @@ import {
 } from "@/lib/avatars";
 import { t, type LanguageCode } from "@/lib/i18n";
 
-export type AvatarState = "idle" | "listening" | "thinking" | "talking" | "concerned";
+export type AvatarState = "idle" | "listening" | "thinking" | "talking" | "concerned" | "celebrating";
 
 const STATE_CAPTION: Record<AvatarState, string> = {
   idle: "I'm here whenever you're ready.",
@@ -19,6 +19,7 @@ const STATE_CAPTION: Record<AvatarState, string> = {
   thinking: "Analyzing your reports...",
   talking: "Here's what I found.",
   concerned: "This looks urgent — please read carefully.",
+  celebrating: "Wonderful — all set!",
 };
 
 const RAINBOW = "#d97757, #e8a87c, #c9a227, #b85c3f, #e0785a, #8a4530, #d97757";
@@ -54,8 +55,10 @@ export default function Avatar({
   const cardRef = useRef<HTMLDivElement>(null);
   const pickerId = useId();
   const persona = getPersona(personaId);
-  const accent = state === "concerned" ? "#e11d48" : getPersonaAccent(personaId);
-  const ringSpeed = state === "thinking" ? "1.4s" : state === "concerned" ? "2s" : "7s";
+  const accent =
+    state === "concerned" ? "#e11d48" : state === "celebrating" ? "#22c55e" : getPersonaAccent(personaId);
+  const ringSpeed =
+    state === "thinking" ? "1.4s" : state === "concerned" ? "2s" : state === "celebrating" ? "1s" : "7s";
   const floatClass = state === "thinking" ? "" : "animate-avatar-float";
 
   const badges = [
@@ -129,7 +132,7 @@ export default function Avatar({
             />
           ))}
 
-          {(state === "thinking" || state === "listening" || state === "concerned") && (
+          {(state === "thinking" || state === "listening" || state === "concerned" || state === "celebrating") && (
             <span
               aria-hidden
               className="absolute inset-0 rounded-full animate-avatar-pulse-ring"
@@ -145,7 +148,7 @@ export default function Avatar({
           <div className={`relative h-32 w-32 sm:h-36 sm:w-36 ${floatClass}`}>
             <div
               className={`h-full w-full overflow-hidden rounded-full border-4 border-white shadow-xl transition-transform ${
-                state === "talking" ? "animate-avatar-talk-bounce" : ""
+                state === "talking" || state === "celebrating" ? "animate-avatar-talk-bounce" : ""
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -180,7 +183,9 @@ export default function Avatar({
         <p
           role="status"
           aria-live="polite"
-          className={`min-h-10 text-center text-sm font-medium ${state === "concerned" ? "text-rose-600" : "text-teal-700"}`}
+          className={`min-h-10 text-center text-sm font-medium ${
+            state === "concerned" ? "text-rose-600" : state === "celebrating" ? "text-green-600" : "text-teal-700"
+          }`}
         >
           {caption ?? STATE_CAPTION[state]}
         </p>

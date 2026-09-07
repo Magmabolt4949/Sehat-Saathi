@@ -9,7 +9,7 @@ import ReportView from "@/components/ReportView";
 import ReportSkeleton from "@/components/ReportSkeleton";
 import Onboarding, { type UserProfile } from "@/components/Onboarding";
 import type { HealthReport, UploadedImage } from "@/lib/types";
-import { LANGUAGES, t, type LanguageCode } from "@/lib/i18n";
+import { LANGUAGES, t, getSavedLanguage, saveLanguage, type LanguageCode } from "@/lib/i18n";
 
 const PROFILE_STORAGE_KEY = "sehat-saathi-profile";
 
@@ -33,8 +33,18 @@ export default function Home() {
         // ignore corrupt storage
       }
     }
+    setLanguage(getSavedLanguage());
     setCheckedStorage(true);
   }, []);
+
+  function handleLanguageChange(value: LanguageCode) {
+    setLanguage(value);
+    saveLanguage(value);
+  }
+
+  function handleAppointmentBooked() {
+    setAvatarState("celebrating");
+  }
 
   function handleOnboardingComplete(newProfile: UserProfile) {
     window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(newProfile));
@@ -99,6 +109,7 @@ export default function Home() {
     thinking: t(language, "avatarThinking"),
     talking: t(language, "avatarTalking"),
     concerned: t(language, "avatarConcerned"),
+    celebrating: t(language, "avatarCelebrating"),
   };
 
   return (
@@ -161,7 +172,13 @@ export default function Home() {
                 <ReportSkeleton />
               ) : report ? (
                 <div className="animate-fade-in-up flex w-full flex-col items-center gap-4">
-                  <ReportView report={report} language={language} locality={locality} />
+                  <ReportView
+                    report={report}
+                    language={language}
+                    locality={locality}
+                    patientName={profile.name}
+                    onAppointmentBooked={handleAppointmentBooked}
+                  />
                   <button
                     type="button"
                     onClick={handleReset}
@@ -176,7 +193,7 @@ export default function Home() {
                   onSubmit={handleSubmit}
                   loading={loading}
                   language={language}
-                  onLanguageChange={setLanguage}
+                  onLanguageChange={handleLanguageChange}
                   locality={locality}
                   onLocalityChange={setLocality}
                 />

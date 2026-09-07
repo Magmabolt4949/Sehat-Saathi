@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   AlertTriangle,
   Stethoscope,
@@ -11,10 +12,13 @@ import {
   Pill,
   MapPin,
   ExternalLink,
+  UserRound,
 } from "lucide-react";
-import type { HealthReport, Likelihood } from "@/lib/types";
+import type { HealthReport, Likelihood, NearbyDoctor } from "@/lib/types";
 import { t, type LanguageCode } from "@/lib/i18n";
 import { buildMapsSearchUrl } from "@/lib/maps";
+import DoctorCard from "@/components/DoctorCard";
+import AppointmentModal from "@/components/AppointmentModal";
 
 function likelihoodStyles(l: Likelihood): string {
   switch (l) {
@@ -90,6 +94,8 @@ interface ReportViewProps {
   report: HealthReport;
   language: LanguageCode;
   locality: string;
+  patientName: string;
+  onAppointmentBooked?: () => void;
 }
 
 const COLORS = {
@@ -101,10 +107,25 @@ const COLORS = {
   routine: "#8b5cf6",
   remedies: "#22c55e",
   pharmacy: "#f59e0b",
+  doctors: "#2563eb",
   nextSteps: "#14b8a6",
 };
 
-export default function ReportView({ report, language, locality }: ReportViewProps) {
+export default function ReportView({ report, language, locality, patientName, onAppointmentBooked }: ReportViewProps) {
+  const [bookingDoctor, setBookingDoctor] = useState<NearbyDoctor | null | undefined>(undefined);
+
+  function handleBook(doctor: NearbyDoctor | null) {
+    setBookingDoctor(doctor);
+  }
+
+  function handleModalClose() {
+    setBookingDoctor(undefined);
+  }
+
+  function handleBooked() {
+    onAppointmentBooked?.();
+  }
+
   return (
     <div className="animate-fade-in-up w-full max-w-2xl space-y-1 rounded-3xl border border-teal-100 bg-white/90 p-6 shadow-lg shadow-teal-900/5 backdrop-blur-sm sm:p-8">
       {report.isEmergency && (
@@ -138,6 +159,12 @@ export default function ReportView({ report, language, locality }: ReportViewPro
           {t(language, "reportSummary")}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-teal-800">{report.summary}</p>
+        {report.recommendedSpecialty && (
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-blue-700">
+            <UserRound className="h-3.5 w-3.5" />
+            {t(language, "recommendedSpecialtyLabel")}: {report.recommendedSpecialty}
+          </p>
+        )}
       </div>
 
       {report.redFlags.length > 0 && (
@@ -269,6 +296,59 @@ export default function ReportView({ report, language, locality }: ReportViewPro
         </Section>
       )}
 
+      {locality && (
+        <Section title={t(language, "reportDoctors")} icon={UserRound} color={COLORS.doctors}>
+          {report.isEmergency && (
+            <p className="mb-3 flex items-start gap-2 rounded-xl bg-rose-50 p-2.5 text-xs font-medium leading-relaxed text-rose-700">
+              <ShieldAlert className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+              {t(language, "doctorEmergencyNote")}
+            </p>
+          )}
+          {report.nearbyDoctors.length > 0 ? (
+            <div className="space-y-2.5">
+              {report.nearbyDoctors.map((doctor, i) => (
+                <DoctorCard
+                  key={i}
+                  doctor={doctor}
+                  locality={locality}
+                  language={language}
+                  color={COLORS.doctors}
+                  onBook={handleBook}
+                />
+              ))}
+            </div>
+          ) : (
+            <div
+              className="rounded-2xl border p-3.5"
+              style={{ borderColor: `${COLORS.doctors}33`, backgroundColor: `${COLORS.doctors}0d` }}
+            >
+              <a
+                href={buildMapsSearchUrl(`${report.recommendedSpecialty || "doctor"} near ${locality}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-2 rounded-xl transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              >
+                <span className="font-medium text-teal-950">{t(language, "reportDoctorsGeneric")}</span>
+                <ExternalLink className="h-4 w-4 flex-shrink-0" style={{ color: COLORS.doctors }} />
+              </a>
+              <button
+                type="button"
+                onClick={() => handleBook(null)}
+                className="mt-3 flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+                style={{ backgroundColor: COLORS.doctors }}
+              >
+                {t(language, "bookAppointment")}
+              </button>
+            </div>
+          )}
+        </Section>
+      )}
+      {!locality && (
+        <Section title={t(language, "reportDoctors")} icon={UserRound} color={COLORS.doctors}>
+          <p className="text-sm text-teal-500">{t(language, "reportDoctorsEmpty")}</p>
+        </Section>
+      )}
+
       <Section title={t(language, "reportNextSteps")} icon={ArrowRight} color={COLORS.nextSteps}>
         <BulletList color={COLORS.nextSteps} items={report.nextSteps} />
       </Section>
@@ -276,6 +356,18 @@ export default function ReportView({ report, language, locality }: ReportViewPro
       <p className="mt-5 border-t border-teal-100 pt-4 text-xs italic leading-relaxed text-teal-500">
         {report.disclaimer}
       </p>
+
+      {bookingDoctor !== undefined && (
+        <AppointmentModal
+          doctor={bookingDoctor}
+          report={report}
+          language={language}
+          locality={locality}
+          patientName={patientName}
+          onClose={handleModalClose}
+          onBooked={handleBooked}
+        />
+      )}
     </div>
   );
 }

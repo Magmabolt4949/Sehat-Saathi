@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/", label: "Health Check" },
   { href: "/yoga", label: "Yoga Corrector" },
+  { href: "/appointments", label: "My Requests" },
 ];
 
 export default function NavBar() {
