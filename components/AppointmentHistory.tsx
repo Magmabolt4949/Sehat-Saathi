@@ -1,21 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, Trash2 } from "lucide-react";
-import type { AppointmentRequest } from "@/lib/types";
+import { FileText, Trash2, WifiOff } from "lucide-react";
+import type { AppointmentRequest, FamilyMember } from "@/lib/types";
 import { t, type LanguageCode } from "@/lib/i18n";
 import { getAppointments, clearAppointments } from "@/lib/appointments";
+import FamilySwitcher from "@/components/FamilySwitcher";
 
 interface AppointmentHistoryProps {
   language: LanguageCode;
+  members?: FamilyMember[];
+  activeMemberId?: string | null;
 }
 
 function StatusDot({ lit }: { lit: boolean }) {
   return <span aria-hidden className={`h-2 w-2 flex-shrink-0 rounded-full ${lit ? "bg-green-500" : "bg-teal-200"}`} />;
 }
 
-export default function AppointmentHistory({ language }: AppointmentHistoryProps) {
+export default function AppointmentHistory({ language, members = [], activeMemberId = null }: AppointmentHistoryProps) {
   const [requests, setRequests] = useState<AppointmentRequest[] | null>(null);
+  const [filterId, setFilterId] = useState<string>(activeMemberId ?? "");
 
   useEffect(() => {
     // Reads localStorage, so it must run client-side after mount (SSR-safe) rather
@@ -31,6 +35,8 @@ export default function AppointmentHistory({ language }: AppointmentHistoryProps
   }
 
   if (requests === null) return null;
+
+  const visible = filterId ? requests.filter((r) => r.memberId === filterId) : requests;
 
   return (
     <div className="w-full max-w-2xl rounded-3xl border border-teal-100 bg-white/80 p-6 shadow-lg shadow-teal-900/5 backdrop-blur-sm sm:p-8">
@@ -49,15 +55,28 @@ export default function AppointmentHistory({ language }: AppointmentHistoryProps
         )}
       </div>
 
+      {members.length > 1 && requests.length > 0 && (
+        <div className="mt-4">
+          <FamilySwitcher members={members} selectedId={filterId} onSelect={setFilterId} language={language} showAllOption />
+        </div>
+      )}
+
       {requests.length === 0 ? (
         <p className="mt-4 text-sm text-teal-500">{t(language, "appointmentsEmpty")}</p>
       ) : (
         <ul className="mt-4 space-y-3">
-          {requests.map((req) => (
+          {visible.map((req) => (
             <li key={req.id} className="rounded-2xl border border-teal-100 bg-teal-50/30 p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-medium text-teal-950">{req.doctor?.name || t(language, "doctorGenericLabel")}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-medium text-teal-950">{req.doctor?.name || t(language, "doctorGenericLabel")}</p>
+                    {req.source === "offline" && (
+                      <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                        <WifiOff className="h-2.5 w-2.5" /> {t(language, "historyBadgeOffline")}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-teal-600">{req.slotLabel}</p>
                 </div>
                 <a

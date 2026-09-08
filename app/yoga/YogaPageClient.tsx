@@ -2,22 +2,15 @@
 
 import { useEffect, useState } from "react";
 import NavBar from "@/components/NavBar";
-import AppointmentHistory from "@/components/AppointmentHistory";
+import YogaSession from "@/components/yoga/YogaSession";
 import { getSavedLanguage, type LanguageCode } from "@/lib/i18n";
-import { getOrMigrateFamily } from "@/lib/family";
-import type { FamilyMember } from "@/lib/types";
 
-export default function AppointmentsPage() {
+export default function YogaPageClient() {
   const [language, setLanguage] = useState<LanguageCode>("en");
-  const [members, setMembers] = useState<FamilyMember[]>([]);
-  const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLanguage(getSavedLanguage());
-    const { members: loadedMembers, activeId } = getOrMigrateFamily();
-    setMembers(loadedMembers);
-    setActiveMemberId(activeId);
   }, []);
 
   return (
@@ -27,7 +20,13 @@ export default function AppointmentsPage() {
         <NavBar language={language} />
       </header>
 
-      <AppointmentHistory language={language} members={members} activeMemberId={activeMemberId} />
+      <YogaSession />
+
+      <p className="max-w-2xl px-2 text-center text-xs text-teal-400">
+        The yoga corrector gives assistive form guidance only, not physiotherapy or medical advice. Stop
+        immediately if you feel pain, and consult a doctor before starting a new exercise routine if you
+        have a medical condition.
+      </p>
     </main>
   );
 }

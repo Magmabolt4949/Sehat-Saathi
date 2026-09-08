@@ -2,18 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { t, type LanguageCode, type TranslationKey } from "@/lib/i18n";
 
-const LINKS = [
-  { href: "/", label: "Health Check" },
-  { href: "/yoga", label: "Yoga Corrector" },
-  { href: "/appointments", label: "My Requests" },
+const LINKS: { href: string; key: TranslationKey }[] = [
+  { href: "/", key: "navHealthCheck" },
+  { href: "/yoga", key: "navYoga" },
+  { href: "/appointments", key: "navRequests" },
+  { href: "/history", key: "navHistory" },
+  { href: "/offline", key: "navOffline" },
 ];
 
-export default function NavBar() {
+interface NavBarProps {
+  language?: LanguageCode;
+}
+
+export default function NavBar({ language = "en" }: NavBarProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-2 rounded-full border border-teal-100 bg-white p-1 text-sm shadow-sm">
+    <nav className="flex flex-wrap justify-center gap-2 rounded-full border border-teal-100 bg-white p-1 text-sm shadow-sm">
       {LINKS.map((link) => {
         const active = pathname === link.href;
         return (
@@ -24,7 +31,7 @@ export default function NavBar() {
               active ? "bg-teal-600 text-white" : "text-teal-700 hover:bg-teal-50"
             }`}
           >
-            {link.label}
+            {t(language, link.key)}
           </Link>
         );
       })}

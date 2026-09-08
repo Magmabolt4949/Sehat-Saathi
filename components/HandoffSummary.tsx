@@ -1,4 +1,4 @@
-import { AlertTriangle, ClipboardList, ArrowRight, Stethoscope, ShieldAlert } from "lucide-react";
+import { AlertTriangle, ClipboardList, ArrowRight, Stethoscope, ShieldAlert, WifiOff } from "lucide-react";
 import type { HandoffPayload, Likelihood } from "@/lib/types";
 import { t, LANGUAGES, type LanguageCode } from "@/lib/i18n";
 
@@ -46,6 +46,13 @@ export default function HandoffSummary({ payload }: HandoffSummaryProps) {
       dir={rtl ? "rtl" : "ltr"}
       className="w-full max-w-2xl space-y-4 rounded-3xl border border-teal-100 bg-white p-6 sm:p-8 print:border-0 print:shadow-none"
     >
+      {payload.source === "offline" && (
+        <div className="flex items-start gap-2.5 rounded-2xl border-2 border-amber-300 bg-amber-50 p-3.5">
+          <WifiOff className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-700" />
+          <p className="text-xs font-medium leading-relaxed text-amber-800">{t(language, "handoffOfflineBadge")}</p>
+        </div>
+      )}
+
       {payload.isEmergency && (
         <div className="rounded-2xl border-2 border-rose-400 bg-rose-50 p-4">
           <div className="flex items-start gap-3">

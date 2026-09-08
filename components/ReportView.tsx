@@ -13,6 +13,7 @@ import {
   MapPin,
   ExternalLink,
   UserRound,
+  WifiOff,
 } from "lucide-react";
 import type { HealthReport, Likelihood, NearbyDoctor } from "@/lib/types";
 import { t, type LanguageCode } from "@/lib/i18n";
@@ -95,6 +96,7 @@ interface ReportViewProps {
   language: LanguageCode;
   locality: string;
   patientName: string;
+  memberId?: string;
   onAppointmentBooked?: () => void;
 }
 
@@ -111,7 +113,7 @@ const COLORS = {
   nextSteps: "#14b8a6",
 };
 
-export default function ReportView({ report, language, locality, patientName, onAppointmentBooked }: ReportViewProps) {
+export default function ReportView({ report, language, locality, patientName, memberId, onAppointmentBooked }: ReportViewProps) {
   const [bookingDoctor, setBookingDoctor] = useState<NearbyDoctor | null | undefined>(undefined);
 
   function handleBook(doctor: NearbyDoctor | null) {
@@ -128,6 +130,13 @@ export default function ReportView({ report, language, locality, patientName, on
 
   return (
     <div className="animate-fade-in-up w-full max-w-2xl space-y-1 rounded-3xl border border-teal-100 bg-white/90 p-6 shadow-lg shadow-teal-900/5 backdrop-blur-sm sm:p-8">
+      {report.source === "offline" && (
+        <div className="mb-5 flex items-start gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4">
+          <WifiOff className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-700" />
+          <p className="text-sm font-medium leading-relaxed text-amber-800">{t(language, "offlineReportBanner")}</p>
+        </div>
+      )}
+
       {report.isEmergency && (
         <div className="mb-5 rounded-2xl border-2 border-rose-400 bg-rose-50 p-4 sm:p-5">
           <div className="flex items-start gap-3">
@@ -364,6 +373,7 @@ export default function ReportView({ report, language, locality, patientName, on
           language={language}
           locality={locality}
           patientName={patientName}
+          memberId={memberId}
           onClose={handleModalClose}
           onBooked={handleBooked}
         />

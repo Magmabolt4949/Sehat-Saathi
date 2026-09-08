@@ -2,23 +2,24 @@
 
 import { useEffect, useState } from "react";
 import NavBar from "@/components/NavBar";
-import AppointmentHistory from "@/components/AppointmentHistory";
+import OfflineAIPanel from "@/components/OfflineAIPanel";
 import { getSavedLanguage, type LanguageCode } from "@/lib/i18n";
-import { getOrMigrateFamily } from "@/lib/family";
-import type { FamilyMember } from "@/lib/types";
+import { getForceOffline, setForceOffline } from "@/lib/offline";
 
-export default function AppointmentsPage() {
+export default function OfflinePage() {
   const [language, setLanguage] = useState<LanguageCode>("en");
-  const [members, setMembers] = useState<FamilyMember[]>([]);
-  const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
+  const [forceOffline, setForceOfflineState] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLanguage(getSavedLanguage());
-    const { members: loadedMembers, activeId } = getOrMigrateFamily();
-    setMembers(loadedMembers);
-    setActiveMemberId(activeId);
+    setForceOfflineState(getForceOffline());
   }, []);
+
+  function handleForceOfflineChange(value: boolean) {
+    setForceOfflineState(value);
+    setForceOffline(value);
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center gap-6 bg-gradient-to-b from-teal-50 to-white px-4 py-10">
@@ -27,7 +28,7 @@ export default function AppointmentsPage() {
         <NavBar language={language} />
       </header>
 
-      <AppointmentHistory language={language} members={members} activeMemberId={activeMemberId} />
+      <OfflineAIPanel language={language} forceOffline={forceOffline} onForceOfflineChange={handleForceOfflineChange} />
     </main>
   );
 }

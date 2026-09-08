@@ -40,6 +40,7 @@ export function buildHandoffPayload(params: {
     slotLabel,
     createdAt: new Date().toISOString(),
     disclaimer: report.disclaimer,
+    source: report.source ?? "cloud",
   };
 }
 
@@ -97,6 +98,7 @@ export function decodeHandoffPayload(raw: string | null): HandoffPayload | null 
       slotLabel: asString(parsed.slotLabel),
       createdAt: asString(parsed.createdAt),
       disclaimer: asString(parsed.disclaimer),
+      source: parsed.source === "offline" ? "offline" : "cloud",
     };
   } catch {
     return null;

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import NavBar from "@/components/NavBar";
-import AppointmentHistory from "@/components/AppointmentHistory";
+import HistoryTimeline from "@/components/HistoryTimeline";
 import { getSavedLanguage, type LanguageCode } from "@/lib/i18n";
 import { getOrMigrateFamily } from "@/lib/family";
 import type { FamilyMember } from "@/lib/types";
 
-export default function AppointmentsPage() {
+export default function HistoryPage() {
   const [language, setLanguage] = useState<LanguageCode>("en");
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export default function AppointmentsPage() {
         <NavBar language={language} />
       </header>
 
-      <AppointmentHistory language={language} members={members} activeMemberId={activeMemberId} />
+      <HistoryTimeline language={language} members={members} activeMemberId={activeMemberId} />
     </main>
   );
 }

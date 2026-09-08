@@ -1,3 +1,5 @@
+import type { AvatarGender, AvatarAgeGroup } from "@/lib/avatars";
+
 export type ImageLabel =
   | "X-Ray"
   | "ECG"
@@ -11,11 +13,20 @@ export interface UploadedImage {
   base64: string;
 }
 
+/** A short, already-condensed slice of a member's own past checks — never raw images or full reports. */
+export interface PriorHistoryItem {
+  createdAt: string;
+  summary: string;
+  possibleConditions: { name: string; likelihood: string }[];
+}
+
 export interface DiagnoseRequestBody {
   images: UploadedImage[];
   symptoms: string;
   language: string;
   locality: string;
+  /** Optional, per-check, patient-revocable — only sent when the user opts in. */
+  priorHistory?: PriorHistoryItem[];
 }
 
 export type Likelihood = "low" | "moderate" | "high";
@@ -39,6 +50,9 @@ export interface NearbyDoctor {
   phone: string;
 }
 
+/** Which AI pipeline produced a report — threaded everywhere a report's provenance matters. */
+export type AISource = "cloud" | "offline";
+
 export interface HealthReport {
   summary: string;
   isEmergency: boolean;
@@ -55,6 +69,8 @@ export interface HealthReport {
   nearbyDoctors: NearbyDoctor[];
   nextSteps: string[];
   disclaimer: string;
+  /** Absent/undefined means "cloud" (every pre-existing report was cloud-generated). */
+  source?: AISource;
 }
 
 export type NotifyChannel = "call" | "whatsapp" | "share" | "copy";
@@ -79,6 +95,8 @@ export interface HandoffPayload {
   slotLabel: string;
   createdAt: string;
   disclaimer: string;
+  /** True provenance of the report this handoff was built from — a doctor must always see this. */
+  source?: AISource;
 }
 
 export interface AppointmentRequest {
@@ -91,4 +109,39 @@ export interface AppointmentRequest {
   handoffUrl: string;
   notifiedVia: NotifyChannel[];
   clinicConfirmed: boolean;
+  /** Which family member this was booked for. Absent on appointments saved before family profiles existed. */
+  memberId?: string;
+  /** Inherited from the report the handoff was built from. */
+  source?: AISource;
+}
+
+// ---------------------------------------------------------------------------
+// Family profiles
+// ---------------------------------------------------------------------------
+
+export type FamilyRelationship = "self" | "spouse" | "parent" | "child" | "other";
+
+export interface FamilyMember {
+  id: string;
+  name: string;
+  gender: AvatarGender | null;
+  ageGroup: AvatarAgeGroup | null;
+  personaId: string;
+  relationship: FamilyRelationship;
+  createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Health history
+// ---------------------------------------------------------------------------
+
+export interface HistoryEntry {
+  id: string;
+  memberId: string;
+  createdAt: string;
+  symptoms: string;
+  locality: string;
+  language: string;
+  report: HealthReport;
+  source: AISource;
 }

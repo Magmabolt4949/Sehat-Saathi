@@ -12,9 +12,12 @@ import {
   UploadCloud,
   MapPin,
   Globe,
+  WifiOff,
+  History,
 } from "lucide-react";
 import type { ImageLabel, UploadedImage } from "@/lib/types";
 import { t, LANGUAGES, type LanguageCode, type TranslationKey } from "@/lib/i18n";
+import VoiceInputButton from "@/components/VoiceInputButton";
 
 const LABELS: ImageLabel[] = ["X-Ray", "ECG", "Skin / Injury Photo", "Other Scan", "Prescription"];
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -44,12 +47,16 @@ interface PendingImage {
 }
 
 interface UploadPanelProps {
-  onSubmit: (images: UploadedImage[], symptoms: string) => void;
+  onSubmit: (images: UploadedImage[], symptoms: string, includeHistory: boolean) => void;
   loading: boolean;
   language: LanguageCode;
   onLanguageChange: (value: LanguageCode) => void;
   locality: string;
   onLocalityChange: (value: string) => void;
+  /** True in real or demo-forced offline mode — disables photo upload, changes copy. */
+  offline?: boolean;
+  /** Whether the active member has any prior checks — shows the opt-in history toggle. */
+  hasHistory?: boolean;
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -71,11 +78,14 @@ export default function UploadPanel({
   onLanguageChange,
   locality,
   onLocalityChange,
+  offline = false,
+  hasHistory = false,
 }: UploadPanelProps) {
   const [images, setImages] = useState<PendingImage[]>([]);
   const [symptoms, setSymptoms] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [includeHistory, setIncludeHistory] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function handleFiles(fileList: FileList | null) {
@@ -128,14 +138,16 @@ export default function UploadPanel({
       return;
     }
     setError(null);
-    const uploaded: UploadedImage[] = await Promise.all(
-      images.map(async (img) => ({
-        label: img.label,
-        mediaType: img.file.type,
-        base64: await fileToBase64(img.file),
-      }))
-    );
-    onSubmit(uploaded, symptoms.trim());
+    const uploaded: UploadedImage[] = offline
+      ? []
+      : await Promise.all(
+          images.map(async (img) => ({
+            label: img.label,
+            mediaType: img.file.type,
+            base64: await fileToBase64(img.file),
+          }))
+        );
+    onSubmit(uploaded, symptoms.trim(), hasHistory && includeHistory);
   }
 
   return (
@@ -143,6 +155,14 @@ export default function UploadPanel({
       <h2 className="text-xl font-semibold tracking-tight text-teal-950">{t(language, "formTitle")}</h2>
       <p className="mt-1.5 text-sm leading-relaxed text-teal-600">{t(language, "formSubtitle")}</p>
 
+      {offline && (
+        <p className="mt-4 flex items-start gap-2 rounded-2xl bg-amber-50 p-3 text-xs font-medium leading-relaxed text-amber-800">
+          <WifiOff className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+          {t(language, "offlineNoImages")}
+        </p>
+      )}
+
+      {!offline && (
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -213,6 +233,7 @@ export default function UploadPanel({
           </button>
         )}
       </div>
+      )}
 
       <input
         ref={inputRef}
@@ -226,13 +247,33 @@ export default function UploadPanel({
         }}
       />
 
-      <textarea
-        value={symptoms}
-        onChange={(e) => setSymptoms(e.target.value)}
-        placeholder={t(language, "symptomsPlaceholder")}
-        rows={4}
-        className="mt-5 w-full resize-none rounded-2xl border border-teal-100 bg-teal-50/30 p-3.5 text-sm text-teal-900 placeholder:text-teal-400 transition-colors focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-teal-100"
-      />
+      <div className="relative mt-5">
+        <textarea
+          value={symptoms}
+          onChange={(e) => setSymptoms(e.target.value)}
+          placeholder={t(language, "symptomsPlaceholder")}
+          rows={4}
+          className="w-full resize-none rounded-2xl border border-teal-100 bg-teal-50/30 p-3.5 pr-12 text-sm text-teal-900 placeholder:text-teal-400 transition-colors focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-teal-100"
+        />
+        <VoiceInputButton
+          language={language}
+          offline={offline}
+          onAppendText={(text) => setSymptoms((prev) => (prev ? `${prev.trim()} ${text}` : text))}
+        />
+      </div>
+
+      {hasHistory && !offline && (
+        <label className="mt-3 flex items-center gap-2 text-xs font-medium text-teal-600">
+          <input
+            type="checkbox"
+            checked={includeHistory}
+            onChange={(e) => setIncludeHistory(e.target.checked)}
+            className="h-4 w-4 rounded border-teal-300 text-teal-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+          />
+          <History className="h-3.5 w-3.5" />
+          {t(language, "includeHistoryToggle")}
+        </label>
+      )}
 
       <div className="mt-3">
         <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-teal-600">

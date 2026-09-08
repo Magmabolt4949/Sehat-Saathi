@@ -20,6 +20,7 @@ interface AppointmentModalProps {
   language: LanguageCode;
   locality: string;
   patientName: string;
+  memberId?: string;
   onClose: () => void;
   onBooked: () => void;
 }
@@ -59,6 +60,7 @@ export default function AppointmentModal({
   language,
   locality,
   patientName,
+  memberId,
   onClose,
   onBooked,
 }: AppointmentModalProps) {
@@ -111,6 +113,8 @@ export default function AppointmentModal({
       handoffUrl,
       notifiedVia: [],
       clinicConfirmed: false,
+      memberId,
+      source: report.source ?? "cloud",
     };
     saveAppointment(newRequest);
     setRequest(newRequest);

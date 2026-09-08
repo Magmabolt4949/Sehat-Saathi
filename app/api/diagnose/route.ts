@@ -147,6 +147,7 @@ export async function POST(req: NextRequest) {
   const symptoms = typeof body.symptoms === "string" ? body.symptoms.trim() : "";
   const locality = typeof body.locality === "string" ? body.locality.trim() : "";
   const language = getLanguage(body.language);
+  const priorHistory = Array.isArray(body.priorHistory) ? body.priorHistory : [];
 
   if (images.length === 0 && !symptoms) {
     return NextResponse.json(
@@ -208,6 +209,19 @@ export async function POST(req: NextRequest) {
       ? `Patient's locality: ${locality}`
       : "No locality was provided.",
   });
+
+  if (priorHistory.length > 0) {
+    const historyLines = priorHistory
+      .map((item) => {
+        const conditions = item.possibleConditions.map((c) => `${c.name} (${c.likelihood})`).join(", ");
+        return `- ${new Date(item.createdAt).toLocaleDateString()}: ${item.summary}${conditions ? ` [${conditions}]` : ""}`;
+      })
+      .join("\n");
+    content.push({
+      type: "text",
+      text: `Patient's own prior AI-assisted checks, for context only — not confirmed medical history; use only to avoid repeating generic advice and to note whether something is recurring or worsening. Do not treat these as ground truth over new evidence:\n${historyLines}`,
+    });
+  }
 
   const system = buildHealthAnalysisSystemPrompt(language.promptName, locality);
   const messages: Anthropic.MessageParam[] = [{ role: "user", content }];
