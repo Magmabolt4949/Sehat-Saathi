@@ -1,139 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-import { getAnthropicClient, DIAGNOSIS_MODEL } from "@/lib/anthropic";
-import { buildHealthAnalysisSystemPrompt } from "@/lib/prompts";
 import { getLanguage } from "@/lib/i18n";
-import type { DiagnoseRequestBody, HealthReport } from "@/lib/types";
+import type { DiagnoseRequestBody, DiagnosisInput, HealthReport } from "@/lib/types";
+import { runAnthropicDiagnosis } from "@/lib/anthropic";
+import { runGeminiDiagnosis } from "@/lib/gemini";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_IMAGES = 6;
 const MAX_BASE64_LENGTH = 7_000_000; // roughly ~5MB image, base64-encoded
-const MAX_LOOP_ITERATIONS = 5;
 
-const reportTool: Anthropic.Tool = {
-  name: "provide_health_report",
-  description:
-    "Provide a structured, assistive (non-diagnostic) health report based on uploaded medical images/scans, prescription photos, and reported symptoms.",
-  input_schema: {
-    type: "object",
-    properties: {
-      summary: {
-        type: "string",
-        description: "Plain-language summary of what the images/symptoms may indicate, 2-4 sentences.",
-      },
-      isEmergency: {
-        type: "boolean",
-        description: "True if any plausible red-flag emergency signs are present.",
-      },
-      redFlags: {
-        type: "array",
-        items: { type: "string" },
-        description: "Specific concerning signs observed, if any. Empty array if none.",
-      },
-      possibleConditions: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            likelihood: { type: "string", enum: ["low", "moderate", "high"] },
-            explanation: { type: "string" },
-          },
-          required: ["name", "likelihood", "explanation"],
-        },
-      },
-      emergencyAdvice: {
-        type: "array",
-        items: { type: "string" },
-        description:
-          "Immediate actions using things available at home, only if safe and generic. First item must be to call emergency services when isEmergency is true.",
-      },
-      recommendedTreatment: {
-        type: "array",
-        items: { type: "string" },
-        description: "General description of what proper medical treatment/evaluation typically involves.",
-      },
-      medicinesToBuy: {
-        type: "array",
-        items: { type: "string" },
-        description: "Specific OTC product/medicine names to look for at a pharmacy, as printed on packaging.",
-      },
-      suggestedRoutine: {
-        type: "array",
-        items: { type: "string" },
-        description: "Ordered, concrete step-by-step routine for the patient to follow.",
-      },
-      homeRemedies: {
-        type: "array",
-        items: { type: "string" },
-        description: "Safe supportive home remedies using common household ingredients.",
-      },
-      nearbyPharmacies: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            note: { type: "string" },
-          },
-          required: ["name", "note"],
-        },
-        description: "Real pharmacies found via web_search near the given locality. Empty if no locality or nothing found.",
-      },
-      recommendedSpecialty: {
-        type: "string",
-        description: "Plain-language type of doctor best suited to the possible conditions (e.g. 'Dermatologist'). Empty string if no locality was given.",
-      },
-      nearbyDoctors: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            specialty: { type: "string" },
-            note: { type: "string" },
-            phone: {
-              type: "string",
-              description: "Real phone number ONLY if it appeared directly in a search result for this listing; empty string otherwise. Never invented or guessed.",
-            },
-          },
-          required: ["name", "specialty", "note", "phone"],
-        },
-        description: "Real doctors/clinics found via web_search near the given locality. Empty if no locality or nothing found.",
-      },
-      nextSteps: {
-        type: "array",
-        items: { type: "string" },
-        description: "Concrete next actions: which specialist, urgency timeframe.",
-      },
-      disclaimer: { type: "string" },
-    },
-    required: [
-      "summary",
-      "isEmergency",
-      "redFlags",
-      "possibleConditions",
-      "emergencyAdvice",
-      "recommendedTreatment",
-      "medicinesToBuy",
-      "suggestedRoutine",
-      "homeRemedies",
-      "nearbyPharmacies",
-      "recommendedSpecialty",
-      "nearbyDoctors",
-      "nextSteps",
-      "disclaimer",
-    ],
-  },
-};
+type AIProvider = "anthropic" | "gemini";
 
-const webSearchTool: Anthropic.WebSearchTool20260209 = {
-  type: "web_search_20260209",
-  name: "web_search",
-  max_uses: 5,
-};
+/**
+ * Provider switch. Explicit AI_PROVIDER wins; otherwise Gemini is used whenever a
+ * GEMINI_API_KEY is present (the free-tier path), falling back to Anthropic. Flip back to
+ * Claude after the demo by setting AI_PROVIDER=anthropic or removing GEMINI_API_KEY.
+ */
+function resolveProvider(): AIProvider {
+  const explicit = process.env.AI_PROVIDER?.toLowerCase();
+  if (explicit === "gemini" || explicit === "anthropic") return explicit;
+  return process.env.GEMINI_API_KEY ? "gemini" : "anthropic";
+}
 
 export async function POST(req: NextRequest) {
   let body: Partial<DiagnoseRequestBody>;
@@ -172,88 +60,36 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let client: Anthropic;
-  try {
-    client = getAnthropicClient();
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "AI client is not configured." },
-      { status: 500 }
-    );
-  }
+  const input: DiagnosisInput = {
+    images,
+    symptoms,
+    locality,
+    languageName: language.promptName,
+    priorHistory,
+  };
 
-  const content: Anthropic.MessageParam["content"] = [];
-
-  for (const img of images) {
-    content.push({
-      type: "image",
-      source: {
-        type: "base64",
-        media_type: img.mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
-        data: img.base64,
-      },
-    });
-    content.push({ type: "text", text: `The image above is labeled: ${img.label}` });
-  }
-
-  content.push({
-    type: "text",
-    text: symptoms
-      ? `Patient-reported symptoms / description: ${symptoms}`
-      : "No additional symptom text was provided; rely on the images alone.",
-  });
-
-  content.push({
-    type: "text",
-    text: locality
-      ? `Patient's locality: ${locality}`
-      : "No locality was provided.",
-  });
-
-  if (priorHistory.length > 0) {
-    const historyLines = priorHistory
-      .map((item) => {
-        const conditions = item.possibleConditions.map((c) => `${c.name} (${c.likelihood})`).join(", ");
-        return `- ${new Date(item.createdAt).toLocaleDateString()}: ${item.summary}${conditions ? ` [${conditions}]` : ""}`;
-      })
-      .join("\n");
-    content.push({
-      type: "text",
-      text: `Patient's own prior AI-assisted checks, for context only — not confirmed medical history; use only to avoid repeating generic advice and to note whether something is recurring or worsening. Do not treat these as ground truth over new evidence:\n${historyLines}`,
-    });
-  }
-
-  const system = buildHealthAnalysisSystemPrompt(language.promptName, locality);
-  const messages: Anthropic.MessageParam[] = [{ role: "user", content }];
+  const provider = resolveProvider();
 
   try {
-    let report: HealthReport | null = null;
-
-    for (let i = 0; i < MAX_LOOP_ITERATIONS; i++) {
-      const response = await client.messages.create({
-        model: DIAGNOSIS_MODEL,
-        max_tokens: 4096,
-        system,
-        tools: locality ? [reportTool, webSearchTool] : [reportTool],
-        messages,
-      });
-
-      const toolUse = response.content.find(
-        (block): block is Anthropic.ToolUseBlock =>
-          block.type === "tool_use" && block.name === "provide_health_report"
-      );
-
-      if (toolUse) {
-        report = toolUse.input as HealthReport;
-        break;
+    let report: HealthReport | null;
+    try {
+      report = provider === "gemini" ? await runGeminiDiagnosis(input) : await runAnthropicDiagnosis(input);
+    } catch (err) {
+      // A missing/unset API key is a configuration problem worth surfacing verbatim.
+      if (err instanceof Error && /API_KEY is not set/.test(err.message)) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
       }
-
-      if (response.stop_reason === "pause_turn") {
-        messages.push({ role: "assistant", content: response.content });
-        continue;
+      // Same for a key the provider rejects — otherwise it looks like a generic outage.
+      const status = (err as { status?: number }).status;
+      if (status === 401 || status === 403) {
+        const keyName = provider === "gemini" ? "GEMINI_API_KEY" : "ANTHROPIC_API_KEY";
+        console.error(`Diagnose API auth error (${provider}):`, err);
+        return NextResponse.json(
+          { error: `The AI provider rejected the API key. Check ${keyName}.` },
+          { status: 500 }
+        );
       }
-
-      break;
+      throw err;
     }
 
     if (!report) {
@@ -265,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ report });
   } catch (err) {
-    console.error("Diagnose API error:", err);
+    console.error(`Diagnose API error (${provider}):`, err);
     return NextResponse.json(
       { error: "Something went wrong while analyzing your report. Please try again." },
       { status: 500 }

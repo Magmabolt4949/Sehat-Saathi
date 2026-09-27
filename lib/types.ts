@@ -29,6 +29,16 @@ export interface DiagnoseRequestBody {
   priorHistory?: PriorHistoryItem[];
 }
 
+/** Validated, provider-agnostic input to a cloud diagnosis run — built once in the API route. */
+export interface DiagnosisInput {
+  images: UploadedImage[];
+  symptoms: string;
+  locality: string;
+  /** The language's prompt name, e.g. "Hindi" (LanguageOption.promptName). */
+  languageName: string;
+  priorHistory: PriorHistoryItem[];
+}
+
 export type Likelihood = "low" | "moderate" | "high";
 
 export interface PossibleCondition {
